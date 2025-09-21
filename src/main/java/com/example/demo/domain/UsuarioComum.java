@@ -1,6 +1,5 @@
 package com.example.demo.domain;
 
-import com.example.demo.domain.enums.Role;
 import com.example.demo.domain.interfaces.IPodeEnviarDinheiro;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -20,10 +19,5 @@ public class UsuarioComum extends UserEntity implements IPodeEnviarDinheiro {
     @Override
     public void enviarDinheiro(BigDecimal valorEnviado) {
         this.setSaldo(this.getSaldo().subtract(valorEnviado));
-    }
-
-    @Override
-    public String enviarNotificacao() {
-        return "";
     }
 }

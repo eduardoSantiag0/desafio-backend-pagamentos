@@ -1,4 +1,4 @@
-package com.example.demo.infra.dtos;
+package com.example.demo.domain.enums;
 
 public enum StatusTransacao {
     COMPLETA,

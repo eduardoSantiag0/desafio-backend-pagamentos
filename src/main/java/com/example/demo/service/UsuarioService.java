@@ -1,11 +1,15 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.CriarUsuarioDTO;
+import com.example.demo.domain.UserEntity;
+import com.example.demo.infra.dtos.CriarUsuarioDTO;
 import com.example.demo.domain.Lojista;
 import com.example.demo.domain.UsuarioComum;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.infra.repositorios.UsuarioRepository;
+import com.example.demo.service.exceptions.UsuarioInvalidoException;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class UsuarioService {
@@ -21,10 +25,11 @@ public class UsuarioService {
         System.out.println(dto);
 
         if (usuarioRepository.existsByEmail(dto.email())) {
-            throw new IllegalStateException("E-mail já cadastrado.");
+            throw new UsuarioInvalidoException("E-mail já cadastrado.");
         }
+
         if (usuarioRepository.existsByCpf(dto.cpf())) {
-            throw new IllegalStateException("CPF já cadastrado.");
+            throw new UsuarioInvalidoException("CPF já cadastrado.");
         }
 
         if (dto.role() == Role.LOJISTA) {
@@ -37,4 +42,14 @@ public class UsuarioService {
             usuarioRepository.save(novoUsuario);
         }
     }
+
+    Optional<UserEntity> procurarPorCPF(String cpf) {
+        return usuarioRepository.findByCpf(cpf);
+    }
+
+
+    Optional<UserEntity> procurarPorEmail(String email) {
+        return usuarioRepository.findByEmail(email);
+    }
+
 }

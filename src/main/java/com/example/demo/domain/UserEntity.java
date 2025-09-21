@@ -1,40 +1,38 @@
 package com.example.demo.domain;
 
 import com.example.demo.domain.enums.Role;
-import com.example.demo.domain.interfaces.INotificavel;
+import com.example.demo.domain.interfaces.notificacao.INotificacaoStrategy;
 import com.example.demo.domain.interfaces.IPodeReceberDinheiro;
 import jakarta.persistence.*;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.List;
 
 @Entity
 @Getter
 @Table(name = "usuarios")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "dtype", discriminatorType = DiscriminatorType.STRING)
-public abstract class UserEntity implements IPodeReceberDinheiro, INotificavel {
+public abstract class UserEntity implements IPodeReceberDinheiro {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    protected Long id;
 
     @Column(nullable = false)
-    private String nome_completo;
+    protected String nome_completo;
 
     @Column(unique = true)
-    private String cpf;
+    protected String cpf;
 
     @Column(unique = true)
-    private String email;
+    protected String email;
 
     @Column(nullable = false)
-    private String senha;
+    protected String senha;
 
     @Column(nullable = false)
-    private BigDecimal saldo;
+    protected BigDecimal saldo;
 
     public UserEntity(String nome_completo, String cpf, String email, String senha, BigDecimal saldo) {
         this.nome_completo = nome_completo;
@@ -58,14 +56,13 @@ public abstract class UserEntity implements IPodeReceberDinheiro, INotificavel {
 
     public boolean enviarDinheiro (UserEntity payee, BigDecimal value) {
 
-        // Verificar se tem dinheiro na conta
-        if (this.getSaldo().compareTo(value) < 0) {
-            return false;
-        }
-
         payee.receberDinheiro(value);
         this.setSaldo(this.saldo.subtract(value));
         return true;
+    }
+
+    public void notificar(INotificacaoStrategy strategy, BigDecimal value) {
+        strategy.criarNotificacao(this.email, value);
     }
 
     public void setSaldo(BigDecimal saldo) {

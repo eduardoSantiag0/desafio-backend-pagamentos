@@ -1,7 +1,6 @@
-package com.example.demo.domain;
+package com.example.demo.infra.dtos;
 
 import com.example.demo.domain.enums.Role;
-import jakarta.persistence.Column;
 
 import java.math.BigDecimal;
 

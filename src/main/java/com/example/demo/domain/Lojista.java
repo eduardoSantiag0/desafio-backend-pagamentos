@@ -1,6 +1,5 @@
 package com.example.demo.domain;
 
-import com.example.demo.domain.enums.Role;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
@@ -16,8 +15,4 @@ public class Lojista extends UserEntity {
     public Lojista() {
     }
 
-    @Override
-    public String enviarNotificacao() {
-        return "";
-    }
 }

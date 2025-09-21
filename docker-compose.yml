@@ -1,0 +1,27 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: "mongodb"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: secret
+      MONGO_INITDB_DATABASE: pagamentos
+    ports:
+      - "27239:27017"
+    networks:
+      - pagamentos-network
+
+#  postgres:
+#    image: postgres:16-alpine
+#    environment:
+#      - POSTGRES_DB=${DB_NAME}
+#      - POSTGRES_USER=${DB_USER}
+#      - POSTGRES_PASSWORD=${DB_PASSWORD}
+#    ports:
+#      - "5433:5432"
+#    networks:
+#      - pagamentos-network
+
+networks:
+  pagamentos-network:
+    driver: bridge

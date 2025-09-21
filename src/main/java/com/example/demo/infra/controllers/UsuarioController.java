@@ -1,6 +1,6 @@
 package com.example.demo.infra.controllers;
 
-import com.example.demo.domain.CriarUsuarioDTO;
+import com.example.demo.infra.dtos.CriarUsuarioDTO;
 import com.example.demo.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
