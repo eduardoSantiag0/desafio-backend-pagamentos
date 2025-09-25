@@ -1,12 +1,17 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.Lojista;
+import com.example.demo.domain.TransacaoDocument;
 import com.example.demo.domain.UserEntity;
 import com.example.demo.domain.UsuarioComum;
 import com.example.demo.infra.dtos.transacao.TransacaoDTOResponse;
 import com.example.demo.domain.enums.StatusTransacao;
 import com.example.demo.infra.dtos.transacao.TransacaoDTORequest;
+import com.example.demo.infra.mensageria.PagamentoProducer;
+import com.example.demo.infra.repositorios.TransacaoRepository;
 import com.example.demo.infra.repositorios.UsuarioRepository;
+import com.example.demo.service.exceptions.LojistaNaoPodeEnviarDinheiroException;
+import com.example.demo.service.exceptions.TransacaoNaoAutorizadaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,7 +23,8 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TransferenciaServiceTest {
@@ -28,6 +34,18 @@ class TransferenciaServiceTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private TransacaoRepository transacaoRepository;
+
+    @Mock
+    private RegistrosDeTransacoesService registrosDeTransacoesService;
+
+    @Mock
+    private NotificadorService notificadorService;
+
+    @Mock
+    private PagamentoProducer pagamentoProducer;
 
     @InjectMocks
     private TransferenciaService transferenciaService;
@@ -40,17 +58,18 @@ class TransferenciaServiceTest {
 
     @BeforeEach
     void setUp() {
+        valorInicialDoSaldo = new BigDecimal("100");
+
         usuario1 = new UsuarioComum("joao", "123456",
                 "joao@email.com", "senha123", valorInicialDoSaldo);
 
         usuario2 = new UsuarioComum("joao", "123456",
                 "joao@email.com", "senha123", valorInicialDoSaldo);
 
-        valorInicialDoSaldo = new BigDecimal("100");
     }
 
     @Test
-    void naoDevePermitirLojistaFazerTransferencia() {
+    void lojistaFazendoTransferencia_NaoDevePermitir() {
 
         //* Arrange
         UserEntity lojista = new Lojista("lojista", "222222",
@@ -62,21 +81,22 @@ class TransferenciaServiceTest {
                 (new BigDecimal(100),3L, 1L);
 
 
-        TransacaoDTOResponse expected =new TransacaoDTOResponse(StatusTransacao.FALHA,
+        TransacaoDTOResponse expected = new TransacaoDTOResponse(StatusTransacao.FALHA,
                 "Lojistas não podem enviar dinheiro");
 
         //* Act
-        TransacaoDTOResponse result = transferenciaService.fazerTransacao(transacaoDTORequest);
 
+        assertThrows(LojistaNaoPodeEnviarDinheiroException.class,
+                () -> transferenciaService.fazerTransacao(transacaoDTORequest));
 
         //* Assert
         assertEquals(lojista.getSaldo(), valorInicialDoSaldo);
-        assertEquals(result.mensagem(), expected.mensagem());
-        assertEquals(result.statusTransacao(), expected.statusTransacao());
+        verify(usuarioRepository, never()).save(any());
+
     }
 
     @Test
-    void deveReverterATransacaoSeServicoEstiverIndisponivel() {
+    void servicoIndisponivel_DeveReverterATransacao() {
 
         //* Arrange
 
@@ -89,15 +109,19 @@ class TransferenciaServiceTest {
                 (new BigDecimal(100),1L, 2L);
 
         //* Act
-        transferenciaService.fazerTransacao(transacaoDTORequest);
+        assertThrows(TransacaoNaoAutorizadaException.class,
+                () -> transferenciaService.fazerTransacao(transacaoDTORequest));
+
 
         assertEquals(usuario1.getSaldo(), valorInicialDoSaldo);
         assertEquals(usuario2.getSaldo(), valorInicialDoSaldo);
 
+        verify(usuarioRepository, never()).save(any());
+
     }
 
     @Test
-    void deveInformarQueATransacaoNaoFoiFeitaCasoServicoEstejaIndisponivel() {
+    void servicoIndisponivel_DeveInformarQueATransacaoNaoFoiFeita() {
 
         //* Arrange
         UserEntity usuario1 = new UsuarioComum("joao", "123456",
@@ -108,22 +132,45 @@ class TransferenciaServiceTest {
 
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
         when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario2));
-
         when(autorizadorService.verificarAutorizacao()).thenReturn(false);
 
         TransacaoDTORequest transacaoDTORequest = new TransacaoDTORequest
                 (new BigDecimal(100),1L, 2L);
 
         //* Act
-        TransacaoDTOResponse result = transferenciaService.fazerTransacao(transacaoDTORequest);
+        //* Assert
+        assertThrows(TransacaoNaoAutorizadaException.class,
+                () -> transferenciaService.fazerTransacao(transacaoDTORequest));
 
-        TransacaoDTOResponse expected = new TransacaoDTOResponse(StatusTransacao.EM_ESPERA,
-                "Transação não autorizada");
+        verify(usuarioRepository, never()).save(any());
+    }
 
+
+
+    @Test
+    void quandoSalvarTransacao_DeveChamarRepositorioExatamenteDuasVezes() {
+
+        //* Arrange
+        BigDecimal valorTestado = new BigDecimal("10");
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario2));
+        when(autorizadorService.verificarAutorizacao()).thenReturn(true);
+
+        TransacaoDTORequest transacaoDTORequest = new TransacaoDTORequest
+                (valorTestado,1L, 2L);
+        when(notificadorService.notificarUsuario(usuario1, usuario2, transacaoDTORequest)).thenReturn(true);
+
+        //* Act
+        transferenciaService.fazerTransacao(transacaoDTORequest);
 
         //* Assert
-        assertEquals(result.mensagem(), expected.mensagem());
-        assertEquals(result.statusTransacao(), expected.statusTransacao());
+        verify(usuarioRepository, times(2)).save((any(UserEntity.class)));
+        assertEquals(usuario1.getSaldo(),valorInicialDoSaldo.subtract(valorTestado));
+        assertEquals(usuario2.getSaldo(),valorInicialDoSaldo.add(valorTestado));
+
 
     }
+
+
 }

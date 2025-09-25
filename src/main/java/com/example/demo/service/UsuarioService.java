@@ -20,17 +20,20 @@ public class UsuarioService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    public void criarUsuario (CriarUsuarioDTO dto) {
-
-        System.out.println(dto);
+    private void verificarUsuario(CriarUsuarioDTO dto) {
 
         if (usuarioRepository.existsByEmail(dto.email())) {
-            throw new UsuarioInvalidoException("E-mail já cadastrado.");
+            throw new UsuarioInvalidoException("E-mail ja cadastrado.");
         }
 
         if (usuarioRepository.existsByCpf(dto.cpf())) {
-            throw new UsuarioInvalidoException("CPF já cadastrado.");
+            throw new UsuarioInvalidoException("CPF ja cadastrado.");
         }
+    }
+
+    public void criarUsuario (CriarUsuarioDTO dto) {
+
+        verificarUsuario(dto);
 
         if (dto.role() == Role.LOJISTA) {
             var novoLojista = new Lojista(dto.nome_completo(), dto.cpf(), dto.email(), dto.senha(), dto.saldo());
