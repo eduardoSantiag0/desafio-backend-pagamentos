@@ -55,7 +55,7 @@ class RegistrosDeTransacoesServiceTest {
         usuario2 = mock(UsuarioComum.class);
 
         TransacaoDTOResponse status1 = new TransacaoDTOResponse(StatusTransacao.COMPLETA, "Transação sucedida, porém sem sucesso de notificar os envolvidos");
-        TransacaoDTOResponse status2 = new TransacaoDTOResponse(StatusTransacao.EM_ESPERA, "Transação não autorizada");
+        TransacaoDTOResponse status2 = new TransacaoDTOResponse(StatusTransacao.FALHA, "Transação não autorizada");
 
         transacoesDTO.add(new RegistroTransacaoDTO(
                 1L,2L,

@@ -50,10 +50,6 @@ public abstract class UserEntity implements IPodeReceberDinheiro {
         this.setSaldo(this.getSaldo().add(valorRecebido));
     }
 
-//    public void sacarDinheiro (BigDecimal valorSacado) {
-//        this.setSaldo(this.saldo.subtract(valorSacado));
-//    }
-
     public boolean enviarDinheiro (UserEntity payee, BigDecimal value) {
         payee.receberDinheiro(value);
         this.setSaldo(this.saldo.subtract(value));

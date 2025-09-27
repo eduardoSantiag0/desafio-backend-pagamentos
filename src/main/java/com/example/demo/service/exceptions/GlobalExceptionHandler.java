@@ -42,9 +42,18 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UsuarioNaoEncontradoException.class)
-    public ResponseEntity<String> handleUsuarioNaoEncontradoException(UsuarioNaoEncontradoException ex) {
+    public ResponseEntity<String> handleUsuarioNaoEncontradoException
+            (UsuarioNaoEncontradoException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(TransacaoComValorNegativoException.class)
+    public ResponseEntity<String> handleTransacaoComValorNegativo
+            (SaldoInsuficienteException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
                 .body(ex.getMessage());
     }
 }

@@ -46,13 +46,4 @@ public class UsuarioService {
         }
     }
 
-    Optional<UserEntity> procurarPorCPF(String cpf) {
-        return usuarioRepository.findByCpf(cpf);
-    }
-
-
-    Optional<UserEntity> procurarPorEmail(String email) {
-        return usuarioRepository.findByEmail(email);
-    }
-
 }

@@ -30,7 +30,7 @@ public class TransferenciaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<List<RegistroTransacaoDTO>> procurarTransacao (@PathVariable Long id) {
+    public ResponseEntity<List<RegistroTransacaoDTO>> procurarTransacao (@PathVariable(name = "id") Long id) {
         List<RegistroTransacaoDTO> response = registrosDeTransacoesService.procurarTransacoesId(id);
         return ResponseEntity.ok(response);
     }

@@ -10,14 +10,12 @@ import com.example.demo.infra.dtos.transacao.TransacaoDTOResponse;
 import com.example.demo.infra.mensageria.PagamentoProducer;
 import com.example.demo.infra.repositorios.TransacaoRepository;
 import com.example.demo.infra.repositorios.UsuarioRepository;
-import com.example.demo.service.exceptions.LojistaNaoPodeEnviarDinheiroException;
-import com.example.demo.service.exceptions.SaldoInsuficienteException;
-import com.example.demo.service.exceptions.TransacaoNaoAutorizadaException;
-import com.example.demo.service.exceptions.UsuarioNaoEncontradoException;
+import com.example.demo.service.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Service
@@ -71,7 +69,7 @@ public class TransferenciaService {
 
         if (!autorizadorService.verificarAutorizacao()) {
 
-            TransacaoDTOResponse response = new TransacaoDTOResponse(StatusTransacao.EM_ESPERA,"Transação não autorizada");
+            TransacaoDTOResponse response = new TransacaoDTOResponse(StatusTransacao.FALHA,"Transação não autorizada");
 
             salvarResultadoDaTransacao(dto,false, false,
                     response);
@@ -104,6 +102,10 @@ public class TransferenciaService {
 
     @Transactional
     public TransacaoDTOResponse fazerTransacao(TransacaoDTORequest dto) {
+
+        if (dto.value().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new TransacaoComValorNegativoException("Não é possível transferir valores negativos");
+        }
 
         UserEntity payer = usuarioRepository.findById(dto.payer())
                 .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuario nao encontrado"));

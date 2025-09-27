@@ -11,6 +11,8 @@ import com.example.demo.infra.mensageria.PagamentoProducer;
 import com.example.demo.infra.repositorios.TransacaoRepository;
 import com.example.demo.infra.repositorios.UsuarioRepository;
 import com.example.demo.service.exceptions.LojistaNaoPodeEnviarDinheiroException;
+import com.example.demo.service.exceptions.SaldoInsuficienteException;
+import com.example.demo.service.exceptions.TransacaoComValorNegativoException;
 import com.example.demo.service.exceptions.TransacaoNaoAutorizadaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -124,12 +126,6 @@ class TransferenciaServiceTest {
     void servicoIndisponivel_DeveInformarQueATransacaoNaoFoiFeita() {
 
         //* Arrange
-        UserEntity usuario1 = new UsuarioComum("joao", "123456",
-                "joao@email.com", "senha123", new BigDecimal("1000"));
-
-        UserEntity usuario2 = new UsuarioComum("joao", "123456",
-                "joao@email.com", "senha123", new BigDecimal("1000"));
-
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
         when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario2));
         when(autorizadorService.verificarAutorizacao()).thenReturn(false);
@@ -171,6 +167,59 @@ class TransferenciaServiceTest {
 
 
     }
+
+    @Test
+    void quandoSaldoInsuficiente_DeveRetornarExcecao() {
+        BigDecimal valorTestado = new BigDecimal("1000");
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario2));
+        TransacaoDTORequest transacaoDTORequest = new TransacaoDTORequest
+                (valorTestado,1L, 2L);
+
+        assertThrows(SaldoInsuficienteException.class,
+                () -> transferenciaService.fazerTransacao(transacaoDTORequest));
+    }
+
+    @Test
+    void quandoValorNegativo_DeveRetornarExcecao() {
+        //* Arrange
+        BigDecimal valorTestado = new BigDecimal("-1000");
+        TransacaoDTORequest transacaoDTORequest = new TransacaoDTORequest
+                (valorTestado,1L, 2L);
+
+        //* Act and Assert
+        assertThrows(TransacaoComValorNegativoException.class,
+                () -> transferenciaService.fazerTransacao(transacaoDTORequest));
+    }
+
+    @Test
+    void quandoNotificacaoNaoEhEnviada_TransacaoEhFeita() {
+        BigDecimal valorTestado = new BigDecimal("10");
+
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario1));
+        when(usuarioRepository.findById(2L)).thenReturn(Optional.of(usuario2));
+        TransacaoDTORequest transacaoDTORequest = new TransacaoDTORequest
+                (valorTestado,1L, 2L);
+
+        when(autorizadorService.verificarAutorizacao()).thenReturn(true);
+        when(notificadorService.notificarUsuario(usuario1, usuario2, transacaoDTORequest)).thenReturn(false);
+
+
+        TransacaoDTOResponse expectedResponse = new TransacaoDTOResponse(StatusTransacao.COMPLETA,
+                "Transação  sucedida, porem sem sucesso em notificar os envolvidos");
+
+
+        TransacaoDTOResponse result = transferenciaService.fazerTransacao(transacaoDTORequest);
+        assertEquals(expectedResponse, result);
+
+        BigDecimal saldoEsperadoUsuario1 = valorInicialDoSaldo.subtract(valorTestado);
+        BigDecimal saldoEsperadoUsuario2 = valorInicialDoSaldo.add(valorTestado);
+        assertEquals(saldoEsperadoUsuario1, usuario1.getSaldo());
+        assertEquals(saldoEsperadoUsuario2, usuario2.getSaldo());
+
+    }
+
 
 
 }

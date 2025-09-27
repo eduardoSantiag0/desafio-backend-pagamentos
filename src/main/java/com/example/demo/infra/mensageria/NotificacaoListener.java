@@ -49,17 +49,7 @@ public class NotificacaoListener {
                     dto.idPayee()
             );
 
-            boolean sucesso = notificadorService.notificarUsuario(payer, payee, request);
-
-            if (sucesso) {
-                registrosDeTransacoesService.salvarDocumento(
-                        new TransacaoDocument(
-                                dto.idPayer(), dto.idPayee(), dto.valor(),
-                                new TransacaoDTOResponse(StatusTransacao.COMPLETA,"Transação  sucedida"),
-                                LocalDate.now(), true, true
-                        )
-                );
-            } else {
+            if (!notificadorService.notificarUsuario(payer, payee, request)) {
                 pagamentoProducer.publicarFilaDeNotificacoes(
                         new RegistroTransacaoDTO(
                                 dto.idPayer(), dto.idPayee(),
@@ -67,6 +57,12 @@ public class NotificacaoListener {
                                 LocalDate.now(), dto.autorizado(), dto.notificacaoEnviada()
                         ));
             }
+
+
+            registrosDeTransacoesService.salvarDocumento(new TransacaoDocument(dto.idPayer(), dto.idPayee(), dto.valor(),
+                            new TransacaoDTOResponse(StatusTransacao.COMPLETA,"Transação  sucedida"),
+                            LocalDate.now(), true, true));
+
         } catch (Exception e)  {
             System.err.println("Erro ao reprocessar pagamento: " + e.getMessage());
 
