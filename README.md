@@ -10,7 +10,9 @@
 
 Aplicação baseada no desafio backend do [PicPay](https://github.com/PicPay/picpay-desafio-backend).  
 
-Implementa funcionalidades de 
+> O PicPay Simplificado é uma plataforma de pagamentos simplificada. Nela é possível depositar e realizar transferências de dinheiro entre usuários. Temos 2 tipos de usuários, os comuns e lojistas, ambos têm carteira com dinheiro e realizam transferências entre eles.
+
+O sistema implementa as funcionalidades de 
 - Cadastro de usuários 
 - Transferência de valores
 - Auditoria de transações e 
@@ -70,7 +72,7 @@ Content-Type: application/json
 
 ## 🪄 Tecnologias Utilizadas
 
-- **Java + Spring Boot**
+- **Java 17 + Spring Boot 3.5.5**
 
 - **Postgres**: 
     - Armazena dados de usuários.
